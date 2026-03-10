@@ -16,7 +16,7 @@ If the user hasn't selected anything, ask them to select a frame or text layer i
 
 ## Saving Reports
 
-After every copy review, **always save the report** to the `./reports/` directory at the project root.
+After every copy or hygiene review, **always save the report** to the `./reports/` directory at the project root.
 
 ### Filename format
 
@@ -33,9 +33,23 @@ YYYY-MM-DD-<frame-name>.md
 - `2026-03-10-settings-dialog.md`
 - `2026-03-10-homepage-2.md` (if `homepage` was already reviewed that day)
 
+### Screenshot
+
+Before writing the report, use the Figma MCP `get_screenshot` tool to capture a PNG of the selected frame. Save the image to `./reports/` using the same base name as the report with a `.png` extension.
+
+```
+YYYY-MM-DD-<frame-name>.png
+```
+
+Embed the screenshot at the top of the report markdown using a relative image link:
+
+```markdown
+![Frame screenshot](YYYY-MM-DD-<frame-name>.png)
+```
+
 ### Report content
 
-The saved file should contain the full structured report (see "Output Format" below), preceded by a metadata header:
+The saved file should contain the full structured report (see "Output Format" below), preceded by a metadata header and screenshot:
 
 ```markdown
 # Copy Review: [Frame/Element Name]
@@ -43,6 +57,8 @@ The saved file should contain the full structured report (see "Output Format" be
 **Frame:** [frame name] (node [nodeId])
 **Date:** [YYYY-MM-DD]
 **Source:** Figma — [file or component context if available]
+
+![Frame screenshot](YYYY-MM-DD-<frame-name>.png)
 
 ---
 ```
