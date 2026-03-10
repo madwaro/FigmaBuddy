@@ -21,30 +21,67 @@ After every copy or hygiene review, **always save the report** to the `./reports
 ### Filename format
 
 ```
-YYYY-MM-DD-<frame-name>.md
+YYYY-MM-DD-HHmm-<frame-name>.md
 ```
 
-- Use the current date (ISO format).
+- Use the current date **and time** (24-hour format, hours + minutes, no separator).
 - Use the Figma frame or element name, lowercased and kebab-cased (spaces → hyphens, remove special characters).
 - If a report with the same name already exists, append an incremented suffix: `-2`, `-3`, etc.
 
 **Examples:**
-- `2026-03-10-homepage.md`
-- `2026-03-10-settings-dialog.md`
-- `2026-03-10-homepage-2.md` (if `homepage` was already reviewed that day)
+- `2026-03-10-1430-homepage.md`
+- `2026-03-10-0915-settings-dialog.md`
+- `2026-03-10-1430-homepage-2.md` (if the same name already exists)
 
 ### Screenshot
 
-Before writing the report, use the Figma MCP `get_screenshot` tool to capture a PNG of the selected frame. Save the image to `./reports/` using the same base name as the report with a `.png` extension.
+Before writing the report, capture a PNG screenshot of the selected frame and **save it to disk** in `./reports/`. Use the same base name as the report with a `.png` extension.
 
 ```
-YYYY-MM-DD-<frame-name>.png
+YYYY-MM-DD-HHmm-<frame-name>.png
+```
+
+**How to save the screenshot:**
+
+1. Call the Figma MCP `get_screenshot` tool to capture the frame.
+2. The tool returns image data but does **not** write it to disk automatically.
+3. To save the file, use `curl` to call the MCP server directly via JSON-RPC, extract the base64-encoded image from the response, and decode it to a `.png` file. Example (bash):
+
+```bash
+# 1. Initialize MCP session
+SESSION_ID=$(curl -s -D /dev/stderr -X POST http://127.0.0.1:3845/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"cli","version":"1.0.0"}}}' \
+  2>&1 1>/dev/null | grep -i mcp-session-id | awk -F': ' '{print $2}' | tr -d '\r')
+
+# 2. Send initialized notification
+curl -s -X POST http://127.0.0.1:3845/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "mcp-session-id: $SESSION_ID" \
+  -d '{"jsonrpc":"2.0","method":"notifications/initialized"}'
+
+# 3. Request screenshot and save
+curl -s -X POST http://127.0.0.1:3845/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "mcp-session-id: $SESSION_ID" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get_screenshot","arguments":{"nodeId":"NODE_ID"}}}' \
+  | python3 -c "
+import sys, json, base64
+raw = sys.stdin.read()
+if raw.startswith('event:'): raw = [l[6:] for l in raw.split('\n') if l.startswith('data: ')][0]
+for item in json.loads(raw)['result']['content']:
+    if item['type'] == 'image':
+        open('REPORT_PATH.png', 'wb').write(base64.b64decode(item['data']))
+"
 ```
 
 Embed the screenshot at the top of the report markdown using a relative image link:
 
 ```markdown
-![Frame screenshot](YYYY-MM-DD-<frame-name>.png)
+![Frame screenshot](YYYY-MM-DD-HHmm-<frame-name>.png)
 ```
 
 ### Report content
@@ -55,10 +92,10 @@ The saved file should contain the full structured report (see "Output Format" be
 # Copy Review: [Frame/Element Name]
 
 **Frame:** [frame name] (node [nodeId])
-**Date:** [YYYY-MM-DD]
+**Date:** [YYYY-MM-DD HH:mm]
 **Source:** Figma — [file or component context if available]
 
-![Frame screenshot](YYYY-MM-DD-<frame-name>.png)
+![Frame screenshot](YYYY-MM-DD-HHmm-<frame-name>.png)
 
 ---
 ```
