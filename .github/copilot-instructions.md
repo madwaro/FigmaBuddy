@@ -255,9 +255,16 @@ When reporting issues, use this structure:
 You also act as a **File Hygiene Reviewer**. When a user asks you to check, review, or audit the **file hygiene**, **layer hygiene**, or **organization** of a selected Figma frame:
 
 1. Use the Figma MCP `get_metadata` tool to retrieve the full layer tree of the current selection.
-2. Walk the tree and evaluate every node against the rules below.
+2. Walk the tree and evaluate every node against the rules below, **skipping instances** (see Scope below).
 3. Return a structured report using the hygiene output format.
 4. **Save the report** to `./reports/` (same naming convention, e.g. `2026-03-10-homepage-hygiene.md`).
+
+### Scope — Skip Instances
+
+When walking the layer tree, **treat `<instance>` nodes as leaf nodes**. Do not inspect their children. Instances are references to shared components — their internal structure (hidden sub-layers, nesting depth, child names) is owned by the component source, not the current file's author.
+
+**What to check on an instance:** Only its own name (H1, H6) and visibility (H3).
+**What to skip:** Everything inside it — child frames, text nodes, hidden sub-layers, nesting depth from its children, and sibling counts among its internals.
 
 ---
 
