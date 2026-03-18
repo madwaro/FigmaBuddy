@@ -16,6 +16,10 @@ When a user asks you to **analyze**, **check**, or **review** a selected Figma f
 
 If the user hasn't selected anything, ask them to select a frame or text layer in Figma first.
 
+## Temporary File Management
+
+Use the `./tmp` folder for any temporary files needed during processing (e.g., raw MCP responses, intermediate data). This folder is for internal use only and should not be used for saving final reports or screenshots.
+
 ## Saving Reports
 
 After every copy or hygiene review, **always save the report** to the `./reports/` directory at the project root.
