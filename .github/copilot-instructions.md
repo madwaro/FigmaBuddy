@@ -51,38 +51,18 @@ YYYY-MM-DD-HHmm-<frame-name>.png
 
 1. Call the Figma MCP `get_screenshot` tool to capture the frame.
 2. The tool returns image data but does **not** write it to disk automatically.
-3. To save the file, use `curl` to call the MCP server directly via JSON-RPC, extract the base64-encoded image from the response, and decode it to a `.png` file. Example (bash):
+3. Use the workspace script to save the screenshot to disk:
 
 ```bash
-# 1. Initialize MCP session
-SESSION_ID=$(curl -s -D /dev/stderr -X POST http://127.0.0.1:3845/mcp \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/json, text/event-stream" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"cli","version":"1.0.0"}}}' \
-  2>&1 1>/dev/null | grep -i mcp-session-id | awk -F': ' '{print $2}' | tr -d '\r')
-
-# 2. Send initialized notification
-curl -s -X POST http://127.0.0.1:3845/mcp \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/json, text/event-stream" \
-  -H "mcp-session-id: $SESSION_ID" \
-  -d '{"jsonrpc":"2.0","method":"notifications/initialized"}'
-
-# 3. Request screenshot and save
-curl -s -X POST http://127.0.0.1:3845/mcp \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/json, text/event-stream" \
-  -H "mcp-session-id: $SESSION_ID" \
-  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get_screenshot","arguments":{"nodeId":"NODE_ID"}}}' \
-  | python3 -c "
-import sys, json, base64
-raw = sys.stdin.read()
-if raw.startswith('event:'): raw = [l[6:] for l in raw.split('\n') if l.startswith('data: ')][0]
-for item in json.loads(raw)['result']['content']:
-    if item['type'] == 'image':
-        open('REPORT_PATH.png', 'wb').write(base64.b64decode(item['data']))
-"
+python3 scripts/save_screenshot.py <NODE_ID> <OUTPUT_PATH>
 ```
+
+**Example:**
+```bash
+python3 scripts/save_screenshot.py 1797:83093 reports/2026-03-18-1015-my-frame.png
+```
+
+The script connects to the Figma MCP server (127.0.0.1:3845), initializes a session, requests the screenshot, and decodes the base64 image to the specified path. It creates parent directories automatically.
 
 Embed the screenshot at the top of the report markdown using a relative image link:
 
